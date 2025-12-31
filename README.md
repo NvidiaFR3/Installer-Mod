@@ -1,6 +1,4 @@
-# :bird: PANEL MOD BY (FR3NEWERA)[t.me/fr3newera]
-
-
+# :bird: PANEL MOD BY [FR3NEWERA](t.me/fr3newera)
 
 ## Auto Install Thema Pterodactyl
 

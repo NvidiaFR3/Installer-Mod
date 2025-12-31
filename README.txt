@@ -16,7 +16,7 @@ DAFTAR ISI
 FITUR UTAMA
 ===========
 No.  Fitur                      Kategori       Deskripsi Singkat
----  -------------------------  -------------  -------------------------------------------------
+---  -------------------------  -------------  -----
 1.   Notifikasi Telegram        Monitoring     Notifikasi real-time user baru via bot Telegram
 2.   Customer Service Sidebar   UI/UX          Tombol akses cepat ke support Telegram
 3.   Dashboard Admin Real-time  Monitoring     Statistik VPS live (CPU, RAM, Disk)
@@ -29,7 +29,7 @@ No.  Fitur                      Kategori       Deskripsi Singkat
 SISTEM YANG DIDUKUNG
 ====================
 Operating System   Version        Status      Keterangan
------------------  -------------  ----------  --------------------------------------------
+-----------------  -------------  ----------  ------
 Ubuntu             20.04 LTS      Supported   Full compatibility
 Ubuntu             22.04 LTS      Supported   Recommended version
 Debian             10 (Buster)    Supported   Stable
@@ -115,7 +115,7 @@ Fitur Utama:
 
 Metrik yang Dimonitor:
 Metric           Source               Update Frequency
----------------  -------------------  ----------------
+---------------  -------------------  --------------
 CPU Load        sys_getloadavg()     Real-time
 RAM Usage       free -m              Real-time
 Disk Usage      df -h /              Real-time
@@ -125,7 +125,7 @@ Active Servers  Database query       On page load
 
 Health Status Indicators:
 Status      Color      Condition
-----------  ---------  ------------------------------------
+----------  ---------  -----------------------------
 Normal      Green      CPU < 2, RAM < 80%, Disk < 80%
 Warning     Yellow     CPU 2-3, RAM 80-90%, Disk 80-90%
 Critical    Red        CPU > 3, RAM > 90%, Disk > 90%
@@ -162,7 +162,7 @@ Layer Proteksi:
 
 Lokasi Implementasi:
 Layer      File Location                                  Protection Type
----------  ---------------------------------------------  --------------------------
+---------  -----------------------------------------
 Database   app/Models/User.php                            Updating & deleting events
 UI/View    resources/views/admin/users/view.blade.php     Read-only fields, hidden buttons
 

@@ -41,7 +41,9 @@ Note: Sistem operasi lain dapat diuji coba secara mandiri. Pastikan environment 
 INSTALASI CEPAT
 ===============
 Instalasi Otomatis:
+```bash
 bash <(curl -s https://raw.githubusercontent.com/NvidiaFR3/Installer-Mod/main/install.sh)
+```
 
 DETAIL FITUR
 ============

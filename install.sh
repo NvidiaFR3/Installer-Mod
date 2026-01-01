@@ -1,3 +1,6 @@
+sudo su
+cd /root
+cat > install_mod_fixed.sh << 'EOF'
 #!/bin/bash
 
 if [ "$EUID" -ne 0 ]; then 
@@ -35,10 +38,8 @@ show_menu() {
 install_mod() {
     echo -e "${YELLOW}Memproses instalasi otomatis...${NC}"
     
-    # Update dan install dependency
     apt-get update && apt-get install -y unzip wget curl
     
-    # Cek apakah direktori pterodactyl ada
     if [ ! -d "$PTERO_DIR" ]; then
         echo -e "${RED}Direktori $PTERO_DIR tidak ditemukan!${NC}"
         echo -e "${YELLOW}Pastikan Pterodactyl Panel sudah terinstall.${NC}"
@@ -53,23 +54,18 @@ install_mod() {
     if [ -f "mod_temp.zip" ]; then
         echo -e "${YELLOW}Mengekstrak file dan menimpa folder pterodactyl...${NC}"
         
-        # Backup singkat sebelum overwrite
         BACKUP_DIR="$PTERO_DIR-backup-$(date +%Y%m%d-%H%M%S)"
         echo -e "${YELLOW}Membuat backup ke: $BACKUP_DIR${NC}"
         cp -r "$PTERO_DIR" "$BACKUP_DIR"
         
-        # Ekstrak file zip
         unzip -o mod_temp.zip -d $BASE_DIR
         
-        # Hapus file zip temporary
         rm -f mod_temp.zip
         
-        # Set permission dan ownership
         echo -e "${YELLOW}Finalisasi (Permission & Cache)...${NC}"
         chown -R www-data:www-data $PTERO_DIR/*
         chmod -R 755 $PTERO_DIR/*
         
-        # Clear cache
         cd $PTERO_DIR
         php artisan view:clear
         php artisan cache:clear
@@ -88,7 +84,6 @@ install_mod() {
 uninstall_mod() {
     echo -e "${YELLOW}Menghapus mod dan mengembalikan ke panel original...${NC}"
     
-    # Cek apakah direktori pterodactyl ada
     if [ ! -d "$PTERO_DIR" ]; then
         echo -e "${RED}Direktori $PTERO_DIR tidak ditemukan!${NC}"
         read -p "Tekan Enter untuk kembali..."
@@ -97,52 +92,41 @@ uninstall_mod() {
     
     cd $PTERO_DIR
     
-    # Backup folder saat ini
     BACKUP_DIR="$PTERO_DIR-mod-backup-$(date +%Y%m%d-%H%M%S)"
     echo -e "${YELLOW}Membuat backup mod saat ini ke: $BACKUP_DIR${NC}"
     cp -r "$PTERO_DIR" "$BACKUP_DIR"
     
-    # Download dan ekstrak panel original
     echo -e "${YELLOW}Mengunduh panel original...${NC}"
     
-    # Cek versi terbaru dari GitHub
     LATEST_RELEASE=$(curl -s https://api.github.com/repos/pterodactyl/panel/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
     
     if [ -z "$LATEST_RELEASE" ]; then
-        LATEST_RELEASE="v1.11.6"  # Fallback version
+        LATEST_RELEASE="v1.11.6"
         echo -e "${YELLOW}Gagal mendapatkan versi terbaru, menggunakan fallback: $LATEST_RELEASE${NC}"
     fi
     
     DOWNLOAD_URL="https://github.com/pterodactyl/panel/releases/download/$LATEST_RELEASE/panel.tar.gz"
     
-    # Download panel original
     curl -L -o panel_original.tar.gz "$DOWNLOAD_URL"
     
     if [ -f "panel_original.tar.gz" ]; then
         echo -e "${YELLOW}Mengekstrak panel original...${NC}"
         
-        # Ekstrak ke folder temporary
         mkdir -p /tmp/panel_original
         tar -xzf panel_original.tar.gz -C /tmp/panel_original
         
-        # Copy ke pterodactyl directory
         echo -e "${YELLOW}Mengganti file...${NC}"
         cp -rf /tmp/panel_original/* $PTERO_DIR/
-        cp -rf /tmp/panel_original/.* $PTERO_DIR/ 2>/dev/null || true
         
-        # Bersihkan
         rm -f panel_original.tar.gz
         rm -rf /tmp/panel_original
         
-        # Install dependencies
         echo -e "${YELLOW}Menginstall dependencies...${NC}"
         composer install --no-dev --optimize-autoloader --quiet
         
-        # Set permissions
         chown -R www-data:www-data $PTERO_DIR/*
         chmod -R 755 $PTERO_DIR/*
         
-        # Clear cache
         php artisan view:clear
         php artisan cache:clear
         php artisan config:clear
@@ -156,7 +140,6 @@ uninstall_mod() {
     read -p "Tekan Enter untuk kembali..."
 }
 
-# Main loop
 while true; do
     show_menu
     case $choice in
@@ -178,3 +161,7 @@ while true; do
             ;;
     esac
 done
+EOF
+
+chmod +x install_mod_fixed.sh
+./install_mod_fixed.sh

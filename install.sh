@@ -17,58 +17,164 @@ NC='\033[0m'
 
 show_menu() {
     clear
-  echo -e ""
-  echo -e "${BLUE}[+] =============================================== [+]${NC}"
-  echo -e "${BLUE}[+]                                                 [+]${NC}"
-  echo -e "${BLUE}[+]                AUTO INSTALLER PANEL MOD             [+]${NC}"
-  echo -e "${BLUE}[+]                  © FR3 NEWERA               [+]${NC}"
-  echo -e "${BLUE}[+]                                                 [+]${NC}"
-  echo -e "${RED}[+] =============================================== [+]${NC}"
-  echo "1. Installer Panel Mod"
-  echo "2. Uninstall Panel Mod"
-  echo "x. Exit From Installer"
-  read -p "Pilih menu [1/2/x]: " choice
+    echo -e ""
+    echo -e "${BLUE}[+] =============================================== [+]${NC}"
+    echo -e "${BLUE}[+]                                                 [+]${NC}"
+    echo -e "${BLUE}[+]                AUTO INSTALLER PANEL MOD         [+]${NC}"
+    echo -e "${BLUE}[+]                  © FR3 NEWERA                   [+]${NC}"
+    echo -e "${BLUE}[+]                                                 [+]${NC}"
+    echo -e "${RED}[+] =============================================== [+]${NC}"
+    echo -e "${GREEN}"
+    echo "1. Installer Panel Mod"
+    echo "2. Uninstall Panel Mod"
+    echo "x. Exit From Installer"
+    echo -e "${NC}"
+    read -p "Pilih menu [1/2/x]: " choice
 }
 
 install_mod() {
-    echo "Memproses instalasi otomatis..."
-    apt-get update && apt-get install -y unzip
+    echo -e "${YELLOW}Memproses instalasi otomatis...${NC}"
+    
+    # Update dan install dependency
+    apt-get update && apt-get install -y unzip wget curl
+    
+    # Cek apakah direktori pterodactyl ada
+    if [ ! -d "$PTERO_DIR" ]; then
+        echo -e "${RED}Direktori $PTERO_DIR tidak ditemukan!${NC}"
+        echo -e "${YELLOW}Pastikan Pterodactyl Panel sudah terinstall.${NC}"
+        read -p "Tekan Enter untuk kembali..."
+        return
+    fi
+    
     cd $BASE_DIR
-    echo "Mengunduh file mod..."
-    wget -q -O mod_temp.zip "$URL_ZIP"
-
+    echo -e "${YELLOW}Mengunduh file mod...${NC}"
+    wget --no-check-certificate -q --show-progress -O mod_temp.zip "$URL_ZIP"
+    
     if [ -f "mod_temp.zip" ]; then
-        echo "Mengekstrak file dan menimpa folder pterodactyl..."
+        echo -e "${YELLOW}Mengekstrak file dan menimpa folder pterodactyl...${NC}"
+        
+        # Backup singkat sebelum overwrite
+        BACKUP_DIR="$PTERO_DIR-backup-$(date +%Y%m%d-%H%M%S)"
+        echo -e "${YELLOW}Membuat backup ke: $BACKUP_DIR${NC}"
+        cp -r "$PTERO_DIR" "$BACKUP_DIR"
+        
+        # Ekstrak file zip
         unzip -o mod_temp.zip -d $BASE_DIR
-        rm mod_temp.zip
-        echo "Finalisasi (Permission & Cache)..."
+        
+        # Hapus file zip temporary
+        rm -f mod_temp.zip
+        
+        # Set permission dan ownership
+        echo -e "${YELLOW}Finalisasi (Permission & Cache)...${NC}"
         chown -R www-data:www-data $PTERO_DIR/*
+        chmod -R 755 $PTERO_DIR/*
+        
+        # Clear cache
         cd $PTERO_DIR
         php artisan view:clear
         php artisan cache:clear
-        echo "Selesai! Mod berhasil dipasang."
+        php artisan config:clear
+        
+        echo -e "${GREEN}Selesai! Mod berhasil dipasang.${NC}"
+        echo -e "${YELLOW}Backup tersimpan di: $BACKUP_DIR${NC}"
     else
-        echo "Gagal mengunduh file dari GitHub. Cek koneksi atau link URL."
+        echo -e "${RED}Gagal mengunduh file dari GitHub.${NC}"
+        echo -e "${YELLOW}Cek koneksi internet atau URL.${NC}"
     fi
+    
     read -p "Tekan Enter untuk kembali..."
 }
 
 uninstall_mod() {
-    echo "Menghapus mod dan mengembalikan ke panel original..."
+    echo -e "${YELLOW}Menghapus mod dan mengembalikan ke panel original...${NC}"
+    
+    # Cek apakah direktori pterodactyl ada
+    if [ ! -d "$PTERO_DIR" ]; then
+        echo -e "${RED}Direktori $PTERO_DIR tidak ditemukan!${NC}"
+        read -p "Tekan Enter untuk kembali..."
+        return
+    fi
+    
     cd $PTERO_DIR
-    curl -L https://github.com/pterodactyl/panel/releases/latest/download/panel.tar.gz | tar -xzv
-    composer install --no-dev --optimize-autoloader
-    chown -R www-data:www-data $PTERO_DIR/*
-    echo "Panel berhasil dikembalikan ke default."
+    
+    # Backup folder saat ini
+    BACKUP_DIR="$PTERO_DIR-mod-backup-$(date +%Y%m%d-%H%M%S)"
+    echo -e "${YELLOW}Membuat backup mod saat ini ke: $BACKUP_DIR${NC}"
+    cp -r "$PTERO_DIR" "$BACKUP_DIR"
+    
+    # Download dan ekstrak panel original
+    echo -e "${YELLOW}Mengunduh panel original...${NC}"
+    
+    # Cek versi terbaru dari GitHub
+    LATEST_RELEASE=$(curl -s https://api.github.com/repos/pterodactyl/panel/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
+    
+    if [ -z "$LATEST_RELEASE" ]; then
+        LATEST_RELEASE="v1.11.6"  # Fallback version
+        echo -e "${YELLOW}Gagal mendapatkan versi terbaru, menggunakan fallback: $LATEST_RELEASE${NC}"
+    fi
+    
+    DOWNLOAD_URL="https://github.com/pterodactyl/panel/releases/download/$LATEST_RELEASE/panel.tar.gz"
+    
+    # Download panel original
+    curl -L -o panel_original.tar.gz "$DOWNLOAD_URL"
+    
+    if [ -f "panel_original.tar.gz" ]; then
+        echo -e "${YELLOW}Mengekstrak panel original...${NC}"
+        
+        # Ekstrak ke folder temporary
+        mkdir -p /tmp/panel_original
+        tar -xzf panel_original.tar.gz -C /tmp/panel_original
+        
+        # Copy ke pterodactyl directory
+        echo -e "${YELLOW}Mengganti file...${NC}"
+        cp -rf /tmp/panel_original/* $PTERO_DIR/
+        cp -rf /tmp/panel_original/.* $PTERO_DIR/ 2>/dev/null || true
+        
+        # Bersihkan
+        rm -f panel_original.tar.gz
+        rm -rf /tmp/panel_original
+        
+        # Install dependencies
+        echo -e "${YELLOW}Menginstall dependencies...${NC}"
+        composer install --no-dev --optimize-autoloader --quiet
+        
+        # Set permissions
+        chown -R www-data:www-data $PTERO_DIR/*
+        chmod -R 755 $PTERO_DIR/*
+        
+        # Clear cache
+        php artisan view:clear
+        php artisan cache:clear
+        php artisan config:clear
+        
+        echo -e "${GREEN}Panel berhasil dikembalikan ke default.${NC}"
+        echo -e "${YELLOW}Backup mod tersimpan di: $BACKUP_DIR${NC}"
+    else
+        echo -e "${RED}Gagal mengunduh panel original.${NC}"
+    fi
+    
     read -p "Tekan Enter untuk kembali..."
 }
 
+# Main loop
 while true; do
     show_menu
     case $choice in
-        1) install_mod ;;
-        2) uninstall_mod ;;
-        x) echo "Menutup Installer..."; exit 0 ;;
-        *) echo "Pilihan salah!"; sleep 1 ;;
+        1) 
+            echo -e "${YELLOW}Memulai instalasi mod...${NC}"
+            install_mod 
+            ;;
+        2) 
+            echo -e "${YELLOW}Memulai uninstall mod...${NC}"
+            uninstall_mod 
+            ;;
+        x|X) 
+            echo -e "${GREEN}Menutup Installer...${NC}"
+            exit 0 
+            ;;
+        *) 
+            echo -e "${RED}Pilihan salah!${NC}"
+            sleep 1 
+            ;;
     esac
 done
